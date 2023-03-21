@@ -289,7 +289,7 @@ ggcorrplot(ghg_cdom_corr_matrix, hc.order = TRUE,
 ```{r}
 # select specific measurements to use in the bar plot
 sum_ghg_wsom <- new_ghg_wsom %>%
-  pivot_longer(cols = c(SUVA254, FRESH, delta_do_hr, d_pco2),
+  pivot_longer(cols = c(SUVA254, FRESH, delta_do_hr, d_pco2, gwc_perc),
                names_to = "measurement",
                values_to = "value") %>%
   select(kit_id, transect_location, measurement, value) %>%
@@ -299,41 +299,90 @@ sum_ghg_wsom <- new_ghg_wsom %>%
             sd_value = sd(value)) %>%
   mutate(se = sd_value/sqrt(n)) %>%
   mutate(measurement = case_when(
-    measurement == "d_pco2" ~ "Delta CO2 Partial Pressure",
+    measurement == "d_pco2" ~ "Delta CO2 Partial Pressure (ppm)",
     measurement == "SUVA254" ~ "SUVA at 254nm",
     measurement == "FRESH" ~ "Freshness Index",
+    measurement == "gwc_perc" ~ "Gravimetric Water Content (% dry weight)",
     TRUE ~ "DO Consumption (mg/L/hr)"
   ))
 
 # plot for change in CO2 partial pressure
-d_pco2 <- ggplot(filter(sum_ghg_wsom, measurement == "Delta CO2 Partial Pressure"), aes(x = measurement, y = mean_value, fill = transect_location)) +
+d_pco2 <- ggplot(filter(sum_ghg_wsom, measurement == "Delta CO2 Partial Pressure (ppm)"), aes(x = transect_location, y = mean_value, fill = transect_location)) +
   geom_bar(stat = "identity", position = position_dodge(), show.legend = FALSE) +
   geom_errorbar(aes(ymin = mean_value - se, ymax = mean_value + se), color = "grey", 
                 width = 0.025, linewidth = 0.8, position = position_dodge(0.9)) + 
   scale_fill_manual(values = palette) +
-  labs(fill = "Transect Location", y = "", x = "")
+  labs(fill = "Transect Location", y = "ppm", x = "", title =
+        expression("Change in CO"["2"] ~"with flooding")) +
+    theme_classic()+
+    theme(legend.position="none", 
+        plot.title = element_text(size=12, color="black"),
+        axis.text=element_text(size=12, color="black"),
+        axis.title=element_text(size=12),
+        axis.text.x = element_text(angle=30, vjust=0.5),
+        axis.title.x = element_text( margin=margin(t=5, r=0, b=0, l=0)),
+        axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0), size = 8),
+        strip.text = element_text(size = 12, color= "black"),
+        strip.background = element_rect(colour="black"))
 
 # plot for change in DO
-delta_do <- ggplot(filter(sum_ghg_wsom, measurement == "DO Consumption (mg/L/hr)"), aes(x = measurement, y = mean_value, fill = transect_location)) +
+delta_do <- ggplot(filter(sum_ghg_wsom, measurement == "DO Consumption (mg/L/hr)"), aes(x = transect_location, y = mean_value, fill = transect_location)) +
   geom_bar(stat = "identity", position = position_dodge(), show.legend = FALSE) +
   geom_errorbar(aes(ymin = mean_value - se, ymax = mean_value + se), color = "grey", 
                 width = 0.025, linewidth = 0.8, position = position_dodge(0.9)) + 
   scale_fill_manual(values = palette) +
-  labs(fill = "Transect Location", y = "", x = "")
+  labs(fill = "Transect Location", y = "", x = "") +
+   theme_classic()+
+    theme(legend.position="none", 
+        plot.title = element_text(size=12, color="black"),
+        axis.text=element_text(size=12, color="black"),
+        axis.title=element_text(size=12),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0)),
+        strip.text = element_text(size = 12, color= "black"),
+        strip.background = element_rect(colour="black"))
 
-# plot for CDOM indices
-wsom <- ggplot(filter(sum_ghg_wsom, measurement == "SUVA at 254nm"|measurement == "Freshness Index"), aes(x = measurement, y = mean_value, fill = transect_location)) +
-  geom_bar(stat = "identity", position = position_dodge()) +
+# gwc
+gwc <- ggplot(filter(sum_ghg_wsom, measurement == "Gravimetric Water Content (% dry weight)"), aes(x = transect_location, y = mean_value, fill = transect_location)) +
+  geom_bar(stat = "identity", position = position_dodge(), show.legend = FALSE) +
   geom_errorbar(aes(ymin = mean_value - se, ymax = mean_value + se), color = "grey", 
                 width = 0.025, linewidth = 0.8, position = position_dodge(0.9)) + 
   scale_fill_manual(values = palette) +
-  labs(fill = "Transect Location", y = "", x = "")
+  labs(fill = "Transect Location", y = "% dry weight", x = "", title = "Soil water content") +
+    theme_classic()+
+    theme(legend.position="none", 
+        plot.title = element_text(size=12, color="black"),
+        axis.text=element_text(size=12, color="black"),
+        axis.title=element_text(size=12),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0), size = 8),
+        strip.text = element_text(size = 12, color= "black"),
+        strip.background = element_rect(colour="black"))
+
+# plot for CDOM indices
+wsom <- ggplot(filter(sum_ghg_wsom, measurement == "SUVA at 254nm"), aes(x = transect_location, y = mean_value, fill = transect_location)) +
+  geom_bar(stat = "identity", position = position_dodge(), show.legend = FALSE) +
+  geom_errorbar(aes(ymin = mean_value - se, ymax = mean_value + se), color = "grey", 
+                width = 0.025, linewidth = 0.8, position = position_dodge(0.9)) + 
+  scale_fill_manual(values = palette) +
+  labs(fill = "Transect Location", y = "", x = "", title = "Specifc UV Absorbance at 254nm") +
+      theme_classic()+
+    theme(legend.position="none", 
+        plot.title = element_text(size=12, color="black"),
+        axis.text=element_text(size=12, color="black"),
+        axis.title=element_text(size=12),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0), size = 8),
+        strip.text = element_text(size = 12, color= "black"),
+        strip.background = element_rect(colour="black"))
 
 # arrange plots all together
-ggarrange(wsom,
-          ggarrange(d_pco2, delta_do, ncol = 2, labels = c("B", "C")),
-          nrow = 2,
-          labels = "A")
+figure <- egg::ggarrange(gwc, wsom, d_pco2, ncol = 1, labels = c("A", "B", "C"),
+          nrow = 3)
 
+cowplot::save_plot(paste("exchange_figure_",Sys.Date(),".jpeg", sep = ""), figure, dpi=300)
 ```
 
